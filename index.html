@@ -871,7 +871,6 @@ main section:not(.hero)::after{
  main section:not(.hero)::after{width:180px;height:120px;right:-62px;opacity:.16;}
  .guest-invitation::after{font-size:19px;letter-spacing:5px;right:13px;bottom:12px;}
 }
-.music-entry,.music-entry-card,.music-entry-play{touch-action:manipulation;pointer-events:auto;}
 </style>
 
 
@@ -910,10 +909,16 @@ h1, h2, h3, .hero-value, .padrino-card h3, .guest-invitation h2 {
   font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif !important;
   font-size: 1.12em;
 }
+
+.music-entry{touch-action:manipulation;pointer-events:auto;}
+.music-entry-card,.music-entry-play{touch-action:manipulation;pointer-events:auto;}
 </style>
 </head>
 <body>
-<div aria-label="Abrir invitación con música" class="music-entry" id="musicEntry" role="button" tabindex="0" ontouchend="window.__openInvitation && window.__openInvitation(event)" onclick="window.__openInvitation && window.__openInvitation(event)">
+<div aria-label="Abrir invitación con música" class="music-entry" id="musicEntry" role="button" tabindex="0"
+ onclick="this.style.display='none';var a=document.getElementById('bgMusic');if(a){a.volume=0.82;var p=a.play();if(p&&p.catch){p.catch(function(){})}}"
+ ontouchend="this.style.display='none';var a=document.getElementById('bgMusic');if(a){a.volume=0.82;var p=a.play();if(p&&p.catch){p.catch(function(){})}}"
+ style="touch-action:manipulation;pointer-events:auto;">
 <div class="music-entry-card">
 <div class="music-entry-note">♫</div>
 <div class="eyebrow">Michelle &amp; Wilmer</div>
@@ -1064,23 +1069,15 @@ tick();setInterval(tick,1000);
     if(btn) btn.textContent='▶';
     if(hint) hint.textContent='Música pausada';
   }
-  function enter(e){
-    if(e){ e.preventDefault(); e.stopPropagation(); }
-    if(!entry || entry.dataset.opened === '1') return;
-    entry.dataset.opened = '1';
-    entry.style.display='none';
-    entry.style.pointerEvents='none';
-    document.body.style.overflow='';
+  function enter(){
+    if(entry) entry.style.display='none';
     startMusic();
   }
-  window.__openInvitation = enter;
   if(entry){
-    entry.addEventListener('pointerup',enter,{passive:false});
-    entry.addEventListener('touchend',enter,{passive:false});
-    entry.addEventListener('click',enter,{passive:false});
+    entry.addEventListener('click',enter,{once:true});
     entry.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){e.preventDefault();enter(e);}
-    });
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();enter();}
+    },{once:true});
   }
   if(btn) btn.addEventListener('click',function(e){
     e.stopPropagation(); active?pauseMusic():startMusic();
