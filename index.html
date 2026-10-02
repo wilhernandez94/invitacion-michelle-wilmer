@@ -871,6 +871,7 @@ main section:not(.hero)::after{
  main section:not(.hero)::after{width:180px;height:120px;right:-62px;opacity:.16;}
  .guest-invitation::after{font-size:19px;letter-spacing:5px;right:13px;bottom:12px;}
 }
+.music-entry,.music-entry-card,.music-entry-play{touch-action:manipulation;pointer-events:auto;}
 </style>
 
 
@@ -909,22 +910,18 @@ h1, h2, h3, .hero-value, .padrino-card h3, .guest-invitation h2 {
   font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif !important;
   font-size: 1.12em;
 }
-#openInviteFallback{position:fixed;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1;}
-#openInviteFallback:checked ~ .music-entry{display:none !important;}
-.music-entry-card{cursor:pointer;}
 </style>
 </head>
 <body>
-<input aria-hidden="true" id="openInviteFallback" type="checkbox" />
-<div aria-label="Abrir invitación con música" class="music-entry" id="musicEntry" role="dialog" aria-modal="true">
-<label class="music-entry-card" for="openInviteFallback">
+<div aria-label="Abrir invitación con música" class="music-entry" id="musicEntry" role="button" tabindex="0" ontouchend="window.__openInvitation && window.__openInvitation(event)" onclick="window.__openInvitation && window.__openInvitation(event)">
+<div class="music-entry-card">
 <div class="music-entry-note">♫</div>
 <div class="eyebrow">Michelle &amp; Wilmer</div>
 <h2>Bienvenidos</h2>
 <p>Toca para abrir la invitación</p>
 <div class="music-entry-play">▶</div>
 <small>♪ A Thousand Years · The Piano Guys</small>
-</label>
+</div>
 </div>
 <main class="page">
 <header class="hero">
@@ -1067,17 +1064,23 @@ tick();setInterval(tick,1000);
     if(btn) btn.textContent='▶';
     if(hint) hint.textContent='Música pausada';
   }
-  function enter(){
-    const fallback=document.getElementById('openInviteFallback');
-    if(fallback) fallback.checked=true;
-    if(entry) entry.style.display='none';
+  function enter(e){
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    if(!entry || entry.dataset.opened === '1') return;
+    entry.dataset.opened = '1';
+    entry.style.display='none';
+    entry.style.pointerEvents='none';
+    document.body.style.overflow='';
     startMusic();
   }
+  window.__openInvitation = enter;
   if(entry){
-    entry.addEventListener('click',enter,{once:true});
+    entry.addEventListener('pointerup',enter,{passive:false});
+    entry.addEventListener('touchend',enter,{passive:false});
+    entry.addEventListener('click',enter,{passive:false});
     entry.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){e.preventDefault();enter();}
-    },{once:true});
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();enter(e);}
+    });
   }
   if(btn) btn.addEventListener('click',function(e){
     e.stopPropagation(); active?pauseMusic():startMusic();
