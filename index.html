@@ -93,9 +93,8 @@ footer{padding:35px 20px;text-align:center;background:#f8f4ed;color:#6b8191;font
 .music-entry{
   position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(180deg,rgba(23,59,99,.72),rgba(23,59,99,.88));
-  padding:25px;cursor:pointer;pointer-events:auto;touch-action:manipulation;
+  padding:25px;cursor:pointer;
 }
-.music-entry-card,.music-entry-play{pointer-events:auto;touch-action:manipulation;}
 .music-entry-card{
   width:min(380px,100%);padding:42px 25px;text-align:center;color:#fff;
   background:rgba(248,244,237,.97);border:1px solid rgba(200,169,107,.7);
@@ -910,18 +909,22 @@ h1, h2, h3, .hero-value, .padrino-card h3, .guest-invitation h2 {
   font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif !important;
   font-size: 1.12em;
 }
+#openInviteFallback{position:fixed;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1;}
+#openInviteFallback:checked ~ .music-entry{display:none !important;}
+.music-entry-card{cursor:pointer;}
 </style>
 </head>
 <body>
-<div aria-label="Abrir invitación con música" class="music-entry" id="musicEntry" role="button" tabindex="0">
-<div class="music-entry-card">
+<input aria-hidden="true" id="openInviteFallback" type="checkbox" />
+<div aria-label="Abrir invitación con música" class="music-entry" id="musicEntry" role="dialog" aria-modal="true">
+<label class="music-entry-card" for="openInviteFallback">
 <div class="music-entry-note">♫</div>
 <div class="eyebrow">Michelle &amp; Wilmer</div>
 <h2>Bienvenidos</h2>
 <p>Toca para abrir la invitación</p>
 <div class="music-entry-play">▶</div>
 <small>♪ A Thousand Years · The Piano Guys</small>
-</div>
+</label>
 </div>
 <main class="page">
 <header class="hero">
@@ -1044,25 +1047,16 @@ tick();setInterval(tick,1000);
   const btn=document.getElementById('musicToggle');
   const hint=document.getElementById('musicHint');
   const audio=document.getElementById('bgMusic');
-  let active=false, opened=false;
-  function startMusic(){
+  let active=false;
+  async function startMusic(){
     if(!audio) return;
     try{
       audio.volume=0.82;
       const p=audio.play();
-      if(p && typeof p.catch==='function'){
-        p.then(function(){
-          active=true;
-          if(btn) btn.textContent='❚❚';
-          if(hint) hint.textContent='♫ Música activada';
-        }).catch(function(){
-          if(hint) hint.textContent='Toca ▶ para activar la música';
-        });
-      } else {
-        active=true;
-        if(btn) btn.textContent='❚❚';
-        if(hint) hint.textContent='♫ Música activada';
-      }
+      if(p && typeof p.then==='function') await p;
+      active=true;
+      if(btn) btn.textContent='❚❚';
+      if(hint) hint.textContent='♫ Música activada';
     }catch(e){
       if(hint) hint.textContent='Toca ▶ para activar la música';
     }
@@ -1073,29 +1067,20 @@ tick();setInterval(tick,1000);
     if(btn) btn.textContent='▶';
     if(hint) hint.textContent='Música pausada';
   }
-  function enter(e){
-    if(e){e.preventDefault();e.stopPropagation();}
-    if(opened) return;
-    opened=true;
-    if(entry){
-      entry.style.display='none';
-      entry.setAttribute('aria-hidden','true');
-      entry.removeEventListener('click',enter);
-      entry.removeEventListener('touchend',enter);
-      entry.removeEventListener('pointerup',enter);
-    }
+  function enter(){
+    const fallback=document.getElementById('openInviteFallback');
+    if(fallback) fallback.checked=true;
+    if(entry) entry.style.display='none';
     startMusic();
   }
   if(entry){
-    entry.addEventListener('pointerup',enter,{passive:false});
-    entry.addEventListener('touchend',enter,{passive:false});
-    entry.addEventListener('click',enter,{passive:false});
+    entry.addEventListener('click',enter,{once:true});
     entry.addEventListener('keydown',function(e){
-      if(e.key==='Enter'||e.key===' '){enter(e);}
-    });
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();enter();}
+    },{once:true});
   }
   if(btn) btn.addEventListener('click',function(e){
-    e.preventDefault();e.stopPropagation(); active?pauseMusic():startMusic();
+    e.stopPropagation(); active?pauseMusic():startMusic();
   });
 })();
 </script>
