@@ -93,8 +93,9 @@ footer{padding:35px 20px;text-align:center;background:#f8f4ed;color:#6b8191;font
 .music-entry{
   position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(180deg,rgba(23,59,99,.72),rgba(23,59,99,.88));
-  padding:25px;cursor:pointer;
+  padding:25px;cursor:pointer;pointer-events:auto;touch-action:manipulation;
 }
+.music-entry-card,.music-entry-play{pointer-events:auto;touch-action:manipulation;}
 .music-entry-card{
   width:min(380px,100%);padding:42px 25px;text-align:center;color:#fff;
   background:rgba(248,244,237,.97);border:1px solid rgba(200,169,107,.7);
@@ -912,17 +913,16 @@ h1, h2, h3, .hero-value, .padrino-card h3, .guest-invitation h2 {
 </style>
 </head>
 <body>
-<input type="checkbox" id="openInvitation" class="gate-toggle" aria-label="Abrir invitación"/>
-<label for="openInvitation" class="music-entry" id="musicEntry" aria-label="Abrir invitación">
-  <div class="music-entry-card">
-    <div class="music-entry-note">♫</div>
-    <div class="eyebrow">Michelle &amp; Wilmer</div>
-    <h2>Bienvenidos</h2>
-    <p>Toca para abrir la invitación</p>
-    <div class="music-entry-play">▶</div>
-    <small>A Thousand Years · The Piano Guys</small>
-  </div>
-</label>
+<div aria-label="Abrir invitación con música" class="music-entry" id="musicEntry" role="button" tabindex="0">
+<div class="music-entry-card">
+<div class="music-entry-note">♫</div>
+<div class="eyebrow">Michelle &amp; Wilmer</div>
+<h2>Bienvenidos</h2>
+<p>Toca para abrir la invitación</p>
+<div class="music-entry-play">▶</div>
+<small>♪ A Thousand Years · The Piano Guys</small>
+</div>
+</div>
 <main class="page">
 <header class="hero">
 <div class="hero-cover">
@@ -1027,41 +1027,6 @@ h1, h2, h3, .hero-value, .padrino-card h3, .guest-invitation h2 {
 </section>
 <footer>Michelle &amp; Wilmer · 21 · 11 · 2026<br/><br/>Con amor, esperamos compartir este día contigo.</footer>
 </main>
-<style id="mobile-entry-gate">
-.gate-toggle{
-  position:absolute;
-  width:1px;
-  height:1px;
-  opacity:0;
-  pointer-events:none;
-}
-.music-entry{
-  position:fixed !important;
-  inset:0 !important;
-  z-index:2147483647 !important;
-  display:flex !important;
-  align-items:center;
-  justify-content:center;
-  background:linear-gradient(180deg,rgba(23,59,99,.72),rgba(23,59,99,.88));
-  padding:25px;
-  cursor:pointer;
-  touch-action:manipulation;
-  -webkit-tap-highlight-color:transparent;
-}
-.music-entry-card,
-.music-entry-play{
-  pointer-events:none;
-  touch-action:manipulation;
-}
-.gate-toggle:checked + .music-entry{
-  display:none !important;
-}
-body:has(.gate-toggle:not(:checked)){
-  overflow:hidden !important;
-  touch-action:none !important;
-}
-</style>
-
 <script>
 const target = new Date("2026-11-21T17:00:00-06:00").getTime();
 function tick(){
@@ -1075,53 +1040,62 @@ tick();setInterval(tick,1000);
 </script>
 <script>
 (function(){
+  const entry=document.getElementById('musicEntry');
   const btn=document.getElementById('musicToggle');
   const hint=document.getElementById('musicHint');
   const audio=document.getElementById('bgMusic');
-  let active=false;
-
+  let active=false, opened=false;
   function startMusic(){
     if(!audio) return;
     try{
       audio.volume=0.82;
       const p=audio.play();
-      if(p && typeof p.then==='function'){
+      if(p && typeof p.catch==='function'){
         p.then(function(){
           active=true;
           if(btn) btn.textContent='❚❚';
           if(hint) hint.textContent='♫ Música activada';
         }).catch(function(){
-          if(hint) hint.textContent='Invitación abierta · toca ▶ para activar la música';
+          if(hint) hint.textContent='Toca ▶ para activar la música';
         });
-      }else{
+      } else {
         active=true;
         if(btn) btn.textContent='❚❚';
         if(hint) hint.textContent='♫ Música activada';
       }
     }catch(e){
-      if(hint) hint.textContent='Invitación abierta · toca ▶ para activar la música';
+      if(hint) hint.textContent='Toca ▶ para activar la música';
     }
   }
-
   function pauseMusic(){
     if(!audio) return;
-    audio.pause();
-    active=false;
+    audio.pause(); active=false;
     if(btn) btn.textContent='▶';
     if(hint) hint.textContent='Música pausada';
   }
-
-  const gate=document.getElementById('openInvitation');
-  if(gate){
-    gate.addEventListener('change',function(){
-      if(gate.checked) startMusic();
+  function enter(e){
+    if(e){e.preventDefault();e.stopPropagation();}
+    if(opened) return;
+    opened=true;
+    if(entry){
+      entry.style.display='none';
+      entry.setAttribute('aria-hidden','true');
+      entry.removeEventListener('click',enter);
+      entry.removeEventListener('touchend',enter);
+      entry.removeEventListener('pointerup',enter);
+    }
+    startMusic();
+  }
+  if(entry){
+    entry.addEventListener('pointerup',enter,{passive:false});
+    entry.addEventListener('touchend',enter,{passive:false});
+    entry.addEventListener('click',enter,{passive:false});
+    entry.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){enter(e);}
     });
   }
-
   if(btn) btn.addEventListener('click',function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    active?pauseMusic():startMusic();
+    e.preventDefault();e.stopPropagation(); active?pauseMusic():startMusic();
   });
 })();
 </script>
